@@ -1,6 +1,6 @@
 # Job Market Intelligence Dashboard
 
-Dashboard interactivo que agrega vacantes Tech de múltiples fuentes públicas y las convierte en visualizaciones accionables.
+Dashboard de inteligencia de mercado laboral construido en React que agrega vacantes tech en tiempo real desde tres fuentes gratuitas — Remotive, The Muse y Adzuna — filtra y deduplica los resultados, y los presenta en cuatro vistas: un overview con gráficos de skills demandadas, distribución de categorías, modalidad de trabajo y empresas que más contratan; un análisis salarial con rangos por rol; un mapa interactivo con OpenStreetMap mostrando las vacantes geo-localizadas; y una tabla con links directos a las ofertas. Las credenciales de Adzuna corren en una función serverless de Vercel para que nunca queden expuestas en el browser.
 
 ![Stack](https://img.shields.io/badge/React-19-61dafb?style=flat&logo=react)
 ![Recharts](https://img.shields.io/badge/Recharts-gray?style=flat)
@@ -8,9 +8,7 @@ Dashboard interactivo que agrega vacantes Tech de múltiples fuentes públicas y
 ![Vite](https://img.shields.io/badge/Vite-8-646cff?style=flat&logo=vite)
 ![Deploy](https://img.shields.io/badge/Deploy-Vercel-black?style=flat&logo=vercel)
 
-## ¿Qué hace?
-
-Agrega vacantes de **3 fuentes en paralelo**, elimina duplicados y genera un dashboard analítico con filtros en tiempo real.
+## Fuentes de Datos
 
 | Fuente | Vacantes | Key requerida |
 |---|---|---|
@@ -18,16 +16,16 @@ Agrega vacantes de **3 fuentes en paralelo**, elimina duplicados y genera un das
 | [The Muse](https://www.themuse.com/api) | ~300 vacantes Data Science | No |
 | [Adzuna](https://developer.adzuna.com) | 10M+ vacantes con salarios reales | Sí (gratis) |
 
-## Vistas del Dashboard
+## Vistas
 
 | Tab | Contenido |
 |---|---|
 | **Overview** | 6 KPIs, Top Skills, Fuentes, Categorías, Modalidad, Top Empresas, Timeline |
 | **Salarios** | Rangos min/avg/max por rol, Distribución salarial, Radar chart |
-| **Mapa** | OpenStreetMap con vacantes geo-localizadas de Adzuna |
+| **Mapa** | OpenStreetMap con vacantes geo-localizadas |
 | **Vacantes** | Tabla interactiva con links directos a las ofertas |
 
-## Setup local
+## Setup Local
 
 ```bash
 git clone https://github.com/Alejndromaldonado/Job-market-intelligence.git
@@ -35,46 +33,45 @@ cd Job-market-intelligence
 npm install
 ```
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crea un `.env` en la raíz:
 
 ```env
-VITE_ADZUNA_APP_ID=tu_app_id
-VITE_ADZUNA_APP_KEY=tu_app_key
+ADZUNA_APP_ID=tu_app_id
+ADZUNA_APP_KEY=tu_app_key
 ```
 
-> Obtén tus credenciales gratis en [developer.adzuna.com](https://developer.adzuna.com). Sin ellas, el dashboard sigue funcionando con Remotive + The Muse.
+> Credenciales gratis en [developer.adzuna.com](https://developer.adzuna.com). Sin ellas el dashboard igual funciona con Remotive + The Muse.
 
 ```bash
 npm run dev
-# Abre http://localhost:5173
 ```
 
 ## Deploy en Vercel
 
-1. Importa el repositorio en [vercel.com/new](https://vercel.com/new)
-2. Vercel detecta Vite automáticamente — no hay nada que configurar en Build Settings
-3. Ve a **Settings → Environment Variables** y agrega:
-   - `VITE_ADZUNA_APP_ID` → tu app_id de Adzuna
-   - `VITE_ADZUNA_APP_KEY` → tu app_key de Adzuna
-4. Haz **Redeploy** para que las variables surtan efecto
+1. Importa el repo en [vercel.com/new](https://vercel.com/new) — Vite se detecta automáticamente
+2. En **Settings → Environment Variables** agrega (sin prefijo `VITE_`):
+   - `ADZUNA_APP_ID`
+   - `ADZUNA_APP_KEY`
+3. **Redeploy** para que las variables surtan efecto
 
-> ⚠️ **Nunca subas el archivo `.env` al repositorio.** Ya está en `.gitignore`.
+Las keys nunca llegan al browser — corren en una función serverless en `api/jobs.js`.
 
 ## Stack
 
 - **React 19** + **Vite 8**
 - **Recharts** — BarChart, AreaChart, PieChart, RadarChart
-- **React Leaflet** + **OpenStreetMap** — mapa interactivo
-- **CSS Glassmorphism** — sin frameworks CSS externos
+- **React Leaflet** + **OpenStreetMap**
+- **Vercel Serverless Functions** — proxy seguro para Adzuna
 
 ## Estructura
 
 ```
 src/
-├── services/
-│   └── jobs.js        # Agregador multi-fuente (Remotive + TheMuse + Adzuna)
-├── utils/
-│   └── analyze.js     # Funciones de análisis y transformación de datos
-├── App.jsx            # Dashboard principal con 4 tabs
-└── index.css          # Sistema de diseño (variables CSS + glassmorphism)
+├── services/jobs.js    # Agregador multi-fuente
+├── utils/analyze.js    # Transformaciones y métricas
+├── App.jsx             # Dashboard con 4 tabs
+└── index.css           # Sistema de diseño
+
+api/
+└── jobs.js             # Serverless proxy para Adzuna (keys server-side)
 ```
