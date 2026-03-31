@@ -1,6 +1,9 @@
 // ============================================================
-// MULTI-SOURCE JOB AGGREGATOR
-// Remotive + The Muse + Adzuna (data-focused + geo-coordinates)
+// MULTI-SOURCE JOB AGGREGATOR — Security Edition
+//
+// Adzuna:    llama a /api/jobs (Vercel serverless) → key queda en servidor
+// Remotive:  API pública sin key
+// The Muse:  API pública sin key
 // ============================================================
 
 async function fetchRemotive() {
@@ -16,8 +19,7 @@ async function fetchRemotive() {
       tags: job.tags || [],
       salary: job.salary || null,
       salary_min: null, salary_max: null,
-      remote: true,
-      lat: null, lng: null,
+      remote: true, lat: null, lng: null,
       url: job.url,
       published: job.publication_date,
       source: 'Remotive',
@@ -49,40 +51,26 @@ async function fetchMusePage(page = 0, category = 'Data Science') {
   } catch (e) { console.warn('TheMuse:', e); return [] }
 }
 
-const ADZUNA_APP_ID  = import.meta.env.VITE_ADZUNA_APP_ID
-const ADZUNA_APP_KEY = import.meta.env.VITE_ADZUNA_APP_KEY
-
-async function fetchAdzuna(query, country = 'us', page = 1, perPage = 50) {
-  if (!ADZUNA_APP_ID || ADZUNA_APP_ID === 'your_app_id_here') return []
+// ── ADZUNA: llama al proxy seguro /api/jobs (keys quedan en servidor) ──
+async function fetchAdzunaSecure(query, country = 'us', page = 1, perPage = 50) {
   try {
-    const url = new URL(`https://api.adzuna.com/v1/api/jobs/${country}/search/${page}`)
-    url.searchParams.set('app_id', ADZUNA_APP_ID)
-    url.searchParams.set('app_key', ADZUNA_APP_KEY)
-    url.searchParams.set('results_per_page', perPage)
-    url.searchParams.set('what', query)
-    url.searchParams.set('content-type', 'application/json')
+    // En local: usa /api/jobs (Vite proxy) o el dev server de Vercel CLI
+    // En producción: /api/jobs es la serverless function de Vercel
+    const url = `/api/jobs?query=${encodeURIComponent(query)}&country=${country}&page=${page}&per_page=${perPage}`
     const res = await fetch(url)
-    if (!res.ok) throw new Error(res.status)
+
+    if (!res.ok) {
+      // Si no hay serverless (local sin Vercel CLI), simplemente devuelve vacío
+      console.warn(`Adzuna proxy responded ${res.status} — skipping`)
+      return []
+    }
+
     const data = await res.json()
-    return (data.results || []).map(job => ({
-      id: `adzuna-${job.id}`,
-      title: job.title,
-      company: job.company?.display_name || 'Unknown',
-      location: job.location?.display_name || 'Unknown',
-      category: job.category?.label || 'IT Jobs',
-      tags: [],
-      salary: job.salary_min && job.salary_max
-        ? `$${Math.round(job.salary_min / 1000)}k – $${Math.round(job.salary_max / 1000)}k` : null,
-      salary_min: job.salary_min || null,
-      salary_max: job.salary_max || null,
-      remote: (job.title + ' ' + (job.description || '')).toLowerCase().includes('remote'),
-      lat: job.latitude || null,
-      lng: job.longitude || null,
-      url: job.redirect_url,
-      published: job.created,
-      source: 'Adzuna',
-    }))
-  } catch (e) { console.warn('Adzuna:', e); return [] }
+    return data.jobs || []
+  } catch (e) {
+    console.warn('Adzuna proxy:', e)
+    return []
+  }
 }
 
 function dedup(jobs) {
@@ -103,11 +91,11 @@ export const jobsApi = {
       fetchMusePage(2, 'Data Science'),
       fetchMusePage(0, 'Software Engineer'),
       fetchMusePage(1, 'Software Engineer'),
-      fetchAdzuna('data analyst', 'us', 1, 50),
-      fetchAdzuna('data engineer', 'us', 1, 50),
-      fetchAdzuna('data scientist', 'us', 1, 50),
-      fetchAdzuna('big data', 'us', 1, 50),
-      fetchAdzuna('machine learning', 'us', 1, 50),
+      fetchAdzunaSecure('data analyst', 'us', 1, 50),
+      fetchAdzunaSecure('data engineer', 'us', 1, 50),
+      fetchAdzunaSecure('data scientist', 'us', 1, 50),
+      fetchAdzunaSecure('big data', 'us', 1, 50),
+      fetchAdzunaSecure('machine learning', 'us', 1, 50),
     ])
     return dedup(results.flatMap(r => r.value ?? []))
   },
