@@ -726,30 +726,32 @@ export default function App() {
                   </BarChart>
                 </ChartCard>
 
-                {/* SALARY DISTRIBUTION */}
-                <ChartCard icon="📊" title="Distribución por Rango Salarial" span={2} height={260}>
-                  <BarChart data={insights.distribution} margin={{top:0,right:16,left:0,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false}/>
-                    <XAxis dataKey="range" stroke="none" tick={{fill:'#94a3b8',fontSize:11}}/>
-                    <YAxis stroke="#475569" tick={{fill:'#94a3b8',fontSize:11}}/>
-                    <Tooltip content={<GlassTooltip/>}/>
-                    <Bar dataKey="count" name="Vacantes" radius={[6,6,0,0]}>
-                      {insights.distribution.map((_,i) => <Cell key={i} fill={C[i%C.length]}/>)}
-                    </Bar>
-                  </BarChart>
-                </ChartCard>
-
-                {/* RADAR: SALARY BY CATEGORY */}
-                {insights.salaries.length >= 3 && (
-                  <ChartCard icon="🕸️" title="Radar: Salario Promedio por Rol" height={260}>
-                    <RadarChart data={insights.salaries.slice(0,8)} cx="50%" cy="50%" outerRadius="75%">
-                      <PolarGrid stroke="#1e293b"/>
-                      <PolarAngleAxis dataKey="role" tick={{fill:'#94a3b8',fontSize:10}}/>
-                      <Radar name="Avg" dataKey="avg" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.25} strokeWidth={2}/>
-                      <Tooltip content={<GlassTooltip formatter={v=>`$${v.toLocaleString()}`}/>}/>
-                    </RadarChart>
+                <div className="grid-charts-2" style={{marginTop:20}}>
+                  {/* SALARY DISTRIBUTION */}
+                  <ChartCard icon="📊" title="Distribución por Rango Salarial" height={260}>
+                    <BarChart data={insights.distribution} margin={{top:0,right:16,left:0,bottom:0}}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false}/>
+                      <XAxis dataKey="range" stroke="none" tick={{fill:'#94a3b8',fontSize:11}}/>
+                      <YAxis stroke="#475569" tick={{fill:'#94a3b8',fontSize:11}}/>
+                      <Tooltip content={<GlassTooltip/>}/>
+                      <Bar dataKey="count" name="Vacantes" radius={[6,6,0,0]}>
+                        {insights.distribution.map((_,i) => <Cell key={i} fill={C[i%C.length]}/>)}
+                      </Bar>
+                    </BarChart>
                   </ChartCard>
-                )}
+
+                  {/* RADAR: SALARY BY CATEGORY */}
+                  {insights.salaries.length >= 3 && (
+                    <ChartCard icon="🕸️" title="Radar: Salario Promedio por Rol" height={260}>
+                      <RadarChart data={insights.salaries.slice(0,8)} cx="50%" cy="50%" outerRadius="75%">
+                        <PolarGrid stroke="#1e293b"/>
+                        <PolarAngleAxis dataKey="role" tick={{fill:'#94a3b8',fontSize:10}}/>
+                        <Radar name="Avg" dataKey="avg" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.25} strokeWidth={2}/>
+                        <Tooltip content={<GlassTooltip formatter={v=>`$${v.toLocaleString()}`}/>}/>
+                      </RadarChart>
+                    </ChartCard>
+                  )}
+                </div>
               </>
             ) : (
               <div className="glass-card" style={{

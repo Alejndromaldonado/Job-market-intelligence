@@ -281,18 +281,23 @@ select:focus { border-color: var(--accent); }
   gap: 14px;
 }
 
+/* Grid containers */
 .grid-kpi {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
 }
 
 .grid-charts-2 {
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 24px;
 }
 
 .grid-charts-3 {
+  display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .grid-charts-full {
