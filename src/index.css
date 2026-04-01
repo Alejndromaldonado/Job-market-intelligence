@@ -122,3 +122,237 @@ select:focus { border-color: var(--accent); }
 }
 .leaflet-control-zoom a:hover { background: rgba(30,41,59,0.9) !important; color: #e2e8f0 !important; }
 .leaflet-control-attribution { display: none !important; }
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+/* Mobile-first: base styles work for small screens */
+/* Breakpoints: sm:640px, md:768px, lg:1024px, xl:1280px */
+
+/* Show mobile menu button on small screens */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  .desktop-nav {
+    display: none !important;
+  }
+}
+
+/* Show desktop tabs on larger screens */
+@media (min-width: 769px) {
+  .mobile-nav {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly targets (minimum 44x44px) */
+@media (max-width: 768px) {
+  .filter-pill {
+    padding: 10px 16px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  select {
+    padding: 12px 16px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  /* Reduce glass-card padding on mobile */
+  .glass-card {
+    border-radius: 16px;
+  }
+
+  /* Header adjustments */
+  .header-logo {
+    font-size: 14px !important;
+  }
+
+  /* Tab buttons mobile-friendly */
+  .tab-button {
+    padding: 10px 14px;
+    min-height: 44px;
+  }
+
+  /* Hide live indicator on very small screens */
+  .live-indicator {
+    display: none !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) {
+  .glass-card {
+    padding: 16px;
+  }
+
+  /* Adjust card hover effects for touch */
+  .glass-card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+}
+
+/* Small mobile (portrait phones) */
+@media (max-width: 480px) {
+  :root {
+    font-size: 14px;
+  }
+
+  .filter-pill {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .glass-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .glass-card {
+    padding: 10px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .filter-pill:hover {
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+
+  .filter-pill:active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .glass-card:hover {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  /* Remove hover effects that don't work on touch */
+  a:hover {
+    color: inherit;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .glass-card {
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode is default, but respect system preference */
+@media (prefers-color-scheme: light) {
+  /* Keep dark theme for dashboard, but could adjust if needed */
+}
+
+/* ============================================================
+   RESPONSIVE GRID LAYOUTS
+   ============================================================ */
+
+/* Grid containers */
+.grid-responsive {
+  display: grid;
+  gap: 14px;
+}
+
+.grid-kpi {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.grid-charts-2 {
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.grid-charts-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.grid-charts-full {
+  grid-template-columns: 1fr;
+}
+
+/* Main container responsive padding */
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Chart card responsive heights */
+.chart-card {
+  padding: 24px;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .grid-charts-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-charts-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .main-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-kpi {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-charts-2,
+  .grid-charts-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Force charts to single column on mobile */
+  .grid-charts-2 .glass-card,
+  .grid-charts-3 .glass-card {
+    grid-column: span 1 !important;
+  }
+
+  .main-container {
+    padding: 12px;
+  }
+
+  .chart-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-kpi {
+    grid-template-columns: 1fr;
+  }
+}

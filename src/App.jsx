@@ -12,6 +12,18 @@ import {
   Radar, PolarGrid, PolarAngleAxis,
 } from 'recharts'
 
+// ─── URL SANITIZATION ────────────────────────────────────────────────
+function sanitizeUrl(url) {
+  if (!url || typeof url !== 'string') return null
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    return parsed.href
+  } catch {
+    return null
+  }
+}
+
 // ─── PALETTE ─────────────────────────────────────────────────────────
 const C = ['#0ea5e9','#10b981','#8b5cf6','#f59e0b','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16','#ef4444']
 
@@ -70,50 +82,82 @@ function ChartCard({ icon, title, children, span = 1, height = 280 }) {
 
 // ─── FILTER BAR ──────────────────────────────────────────────────────
 function FilterBar({ filters, setFilters, categories, sources }) {
+  const [isOpen, setIsOpen] = useState(false)
+
   return (
-    <div className="glass-card" style={{padding:'16px 20px',display:'flex',flexWrap:'wrap',gap:12,alignItems:'center'}}>
-      <span style={{color:'var(--text-muted)',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginRight:4}}>🔧 Filtros</span>
-
-      {/* Remote filter */}
-      <div style={{display:'flex',gap:6}}>
-        {['All','Remote','On-site'].map(opt => (
-          <button key={opt} className={`filter-pill ${filters.remote === opt ? 'active' : ''}`}
-            onClick={() => setFilters(f => ({...f, remote: opt}))}>
-            {opt === 'Remote' ? '🌍 ' : opt === 'On-site' ? '🏢 ' : ''}{opt}
-          </button>
-        ))}
+    <div className="glass-card" style={{padding:'16px 20px',position:'relative'}}>
+      {/* Mobile Header for Filters */}
+      <div className="mobile-filter-header" style={{
+        display:'none',justifyContent:'space-between',alignItems:'center',cursor:'pointer'
+      }} onClick={() => setIsOpen(!isOpen)}>
+        <span style={{color:'var(--text-muted)',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em'}}>🔧 Filtros ({filters._count ?? 0})</span>
+        <span style={{fontSize:18,transform:isOpen ? 'rotate(180deg)' : 'none',transition:'transform 0.3s'}}>▼</span>
       </div>
 
-      <div style={{width:1,height:24,background:'var(--border)'}}/>
+      <div className={`filter-grid ${isOpen ? 'show' : ''}`} style={{
+        display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',
+        marginTop: 0,
+      }}>
+        <style>{`
+          @media (max-width: 768px) {
+            .mobile-filter-header { display: flex !important; }
+            .filter-grid {
+              display: none !important;
+              flex-direction: column;
+              align-items: flex-start !important;
+              gap: 16px !important;
+              margin-top: 16px !important;
+              padding-top: 16px;
+              border-top: 1px solid var(--border);
+            }
+            .filter-grid.show { display: flex !important; }
+            .filter-grid > div, .filter-grid > select { width: 100% !important; }
+            .filter-grid .filter-pill { flex: 1; text-align: center; justify-content: center; }
+            .count-badge { margin-left: 0 !important; width: 100%; text-align: center; }
+          }
+        `}</style>
 
-      {/* Source filter */}
-      <select value={filters.source}
-        onChange={e => setFilters(f => ({...f, source: e.target.value}))}>
-        <option value="">📡 All Sources</option>
-        {sources.map(s => <option key={s} value={s}>{s}</option>)}
-      </select>
+        {/* Remote filter */}
+        <div style={{display:'flex',gap:6}}>
+          {['All','Remote','On-site'].map(opt => (
+            <button key={opt} className={`filter-pill ${filters.remote === opt ? 'active' : ''}`}
+              onClick={() => setFilters(f => ({...f, remote: opt}))}>
+              {opt === 'Remote' ? '🌍 ' : opt === 'On-site' ? '🏢 ' : ''}{opt}
+            </button>
+          ))}
+        </div>
 
-      {/* Category filter */}
-      <select value={filters.category}
-        onChange={e => setFilters(f => ({...f, category: e.target.value}))}>
-        <option value="">🗂️ All Categories</option>
-        {categories.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
+        <div className="desktop-only" style={{width:1,height:24,background:'var(--border)'}}/>
 
-      {/* Salary filter */}
-      <div style={{display:'flex',gap:6}}>
-        {['All','With Salary'].map(opt => (
-          <button key={opt} className={`filter-pill ${filters.salary === opt ? 'active' : ''}`}
-            onClick={() => setFilters(f => ({...f, salary: opt}))}>
-            {opt === 'With Salary' ? '💰 ' : ''}{opt}
-          </button>
-        ))}
-      </div>
+        {/* Source filter */}
+        <select value={filters.source}
+          onChange={e => setFilters(f => ({...f, source: e.target.value}))}>
+          <option value="">📡 All Sources</option>
+          {sources.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
 
-      {/* Count badge */}
-      <div style={{marginLeft:'auto',background:'rgba(14,165,233,0.12)',border:'1px solid rgba(14,165,233,0.25)',
-        borderRadius:99,padding:'4px 12px',fontSize:12,color:'var(--accent)',fontWeight:600}}>
-        Mostrando {filters._count ?? '—'} vacantes
+        {/* Category filter */}
+        <select value={filters.category}
+          onChange={e => setFilters(f => ({...f, category: e.target.value}))}>
+          <option value="">🗂️ All Categories</option>
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+
+        {/* Salary filter */}
+        <div style={{display:'flex',gap:6}}>
+          {['All','With Salary'].map(opt => (
+            <button key={opt} className={`filter-pill ${filters.salary === opt ? 'active' : ''}`}
+              onClick={() => setFilters(f => ({...f, salary: opt}))}>
+              {opt === 'With Salary' ? '💰 ' : ''}{opt}
+            </button>
+          ))}
+        </div>
+
+        {/* Count badge */}
+        <div className="count-badge" style={{marginLeft:'auto',background:'rgba(14,165,233,0.12)',border:'1px solid rgba(14,165,233,0.25)',
+          borderRadius:99,padding:'4px 12px',fontSize:12,color:'var(--accent)',fontWeight:600}}>
+          Mostrando {filters._count ?? '—'} vacantes
+        </div>
       </div>
     </div>
   )
@@ -123,53 +167,120 @@ function FilterBar({ filters, setFilters, categories, sources }) {
 function JobTable({ jobs }) {
   const shown = jobs.slice(0, 10)
   return (
-    <div style={{overflowX:'auto'}}>
-      <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-        <thead>
-          <tr style={{borderBottom:'1px solid var(--border)'}}>
-            {['Título','Empresa','Ubicación','Categoría','Salario','Fuente'].map(h => (
-              <th key={h} style={{padding:'10px 12px',textAlign:'left',color:'var(--text-muted)',
-                fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',whiteSpace:'nowrap'}}>{h}</th>
+    <div className="responsive-table-container">
+      <style>{`
+        @media (max-width: 768px) {
+          .desktop-table { display: none !important; }
+          .mobile-job-list { display: flex !important; flex-direction: column; gap: 12px; }
+          .job-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .job-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+          .job-card-title { font-size: 14px; font-weight: 600; color: #f1f5f9; text-decoration: none; }
+          .job-card-company { font-size: 13px; color: var(--text-muted); }
+          .job-card-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+          .job-tag {
+            background: rgba(139,92,246,0.1);
+            color: #c4b5fd;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(139,92,246,0.2);
+          }
+          .source-tag {
+              padding: 2px 8px;
+              border-radius: 4px;
+              font-size: 10px;
+          }
+        }
+      `}</style>
+
+      {/* Desktop Table */}
+      <div className="desktop-table" style={{overflowX:'auto'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+          <thead>
+            <tr style={{borderBottom:'1px solid var(--border)'}}>
+              {['Título','Empresa','Ubicación','Categoría','Salario','Fuente'].map(h => (
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',color:'var(--text-muted)',
+                  fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',whiteSpace:'nowrap'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((job, i) => (
+              <tr key={job.id} style={{borderBottom:'1px solid rgba(148,163,184,0.06)',
+                background: i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)',
+                transition:'background 0.1s'}}
+                onMouseEnter={e => e.currentTarget.style.background='rgba(14,165,233,0.06)'}
+                onMouseLeave={e => e.currentTarget.style.background= i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)'}
+              >
+                <td style={{padding:'10px 12px'}}>
+                  {sanitizeUrl(job.url) ? (
+                    <a href={sanitizeUrl(job.url)} target="_blank" rel="noopener noreferrer"
+                      style={{color:'#e2e8f0',fontWeight:500,textDecoration:'none'}}
+                      onMouseEnter={e=>e.target.style.color='var(--accent)'}
+                      onMouseLeave={e=>e.target.style.color='#e2e8f0'}>
+                      {job.title?.slice(0,50)}{job.title?.length > 50 ? '…' : ''}
+                    </a>
+                  ) : (
+                    <span style={{color:'var(--text-muted)'}}>{job.title?.slice(0,50)}{job.title?.length > 50 ? '…' : ''}</span>
+                  )}
+                </td>
+                <td style={{padding:'10px 12px',color:'var(--text-muted)'}}>{job.company?.slice(0,25)}</td>
+                <td style={{padding:'10px 12px',color:'var(--text-muted)',fontSize:12}}>{job.location?.slice(0,22)}</td>
+                <td style={{padding:'10px 12px'}}>
+                  <span style={{
+                    background:'rgba(139,92,246,0.15)',border:'1px solid rgba(139,92,246,0.3)',
+                    borderRadius:6,padding:'2px 8px',fontSize:11,color:'#c4b5fd',whiteSpace:'nowrap',
+                  }}>{job.category?.slice(0,20)}</span>
+                </td>
+                <td style={{padding:'10px 12px',color:'#10b981',fontWeight:600,fontSize:12}}>{job.salary ?? '—'}</td>
+                <td style={{padding:'10px 12px'}}>
+                  <span style={{
+                    background: job.source==='Adzuna' ? 'rgba(14,165,233,0.15)' : job.source==='The Muse' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    border: `1px solid ${job.source==='Adzuna' ? 'rgba(14,165,233,0.3)' : job.source==='The Muse' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                    borderRadius:6,padding:'2px 8px',fontSize:11,
+                    color: job.source==='Adzuna' ? '#38bdf8' : job.source==='The Muse' ? '#34d399' : '#fbbf24',
+                  }}>{job.source}</span>
+                </td>
+              </tr>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {shown.map((job, i) => (
-            <tr key={job.id} style={{borderBottom:'1px solid rgba(148,163,184,0.06)',
-              background: i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)',
-              transition:'background 0.1s'}}
-              onMouseEnter={e => e.currentTarget.style.background='rgba(14,165,233,0.06)'}
-              onMouseLeave={e => e.currentTarget.style.background= i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)'}
-            >
-              <td style={{padding:'10px 12px'}}>
-                <a href={job.url} target="_blank" rel="noopener noreferrer"
-                  style={{color:'#e2e8f0',fontWeight:500,textDecoration:'none'}}
-                  onMouseEnter={e=>e.target.style.color='var(--accent)'}
-                  onMouseLeave={e=>e.target.style.color='#e2e8f0'}>
-                  {job.title?.slice(0,50)}{job.title?.length > 50 ? '…' : ''}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Job List (Cards) */}
+      <div className="mobile-job-list" style={{display:'none'}}>
+        {shown.map(job => (
+          <div key={job.id} className="job-card">
+            <div className="job-card-header">
+               {sanitizeUrl(job.url) ? (
+                <a href={sanitizeUrl(job.url)} target="_blank" rel="noopener noreferrer" className="job-card-title">
+                  {job.title}
                 </a>
-              </td>
-              <td style={{padding:'10px 12px',color:'var(--text-muted)'}}>{job.company?.slice(0,25)}</td>
-              <td style={{padding:'10px 12px',color:'var(--text-muted)',fontSize:12}}>{job.location?.slice(0,22)}</td>
-              <td style={{padding:'10px 12px'}}>
-                <span style={{
-                  background:'rgba(139,92,246,0.15)',border:'1px solid rgba(139,92,246,0.3)',
-                  borderRadius:6,padding:'2px 8px',fontSize:11,color:'#c4b5fd',whiteSpace:'nowrap',
-                }}>{job.category?.slice(0,20)}</span>
-              </td>
-              <td style={{padding:'10px 12px',color:'#10b981',fontWeight:600,fontSize:12}}>{job.salary ?? '—'}</td>
-              <td style={{padding:'10px 12px'}}>
-                <span style={{
+               ) : (
+                 <span className="job-card-title">{job.title}</span>
+               )}
+               <span className="source-tag" style={{
                   background: job.source==='Adzuna' ? 'rgba(14,165,233,0.15)' : job.source==='The Muse' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
                   border: `1px solid ${job.source==='Adzuna' ? 'rgba(14,165,233,0.3)' : job.source==='The Muse' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
-                  borderRadius:6,padding:'2px 8px',fontSize:11,
                   color: job.source==='Adzuna' ? '#38bdf8' : job.source==='The Muse' ? '#34d399' : '#fbbf24',
                 }}>{job.source}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </div>
+            <div className="job-card-company">{job.company} · <span style={{fontSize:12}}>{job.location}</span></div>
+            <div className="job-card-meta">
+              <span className="job-tag">{job.category}</span>
+              {job.salary && <span style={{color:'#10b981',fontWeight:600}}>💰 {job.salary}</span>}
+              {job.remote && <span style={{color:'#0ea5e9'}}>🌍 Remote</span>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -237,6 +348,11 @@ function LoadingScreen() {
       }}>
         Job Market Intelligence
       </h1>
+      <p style={{
+        color:'var(--text-muted)', fontSize:13, fontWeight:500, margin:'0 0 40px', opacity:0.6
+      }}>
+        Inteligencia de Mercado: Cargando vacantes tecnológicas en EE.UU.
+      </p>
       <p style={{ color:'#334155', fontSize:12, margin:'0 0 40px', fontWeight:500 }}>
         Remotive · The Muse · Adzuna
       </p>
@@ -281,6 +397,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [filters, setFilters] = useState({ remote: 'All', source: '', category: '', salary: 'All' })
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     jobsApi.getAll()
@@ -352,8 +469,11 @@ export default function App() {
         backdropFilter:'blur(20px)',
         borderBottom:'1px solid var(--border)',
       }}>
-        <div style={{maxWidth:1400,margin:'0 auto',padding:'0 24px',
-          display:'flex',alignItems:'center',justifyContent:'space-between',height:64}}>
+        <div style={{
+          maxWidth:1400,margin:'0 auto',padding:'0 16px',
+          display:'flex',alignItems:'center',justifyContent:'space-between',height:64,
+        }}>
+          {/* Logo */}
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             <div style={{
               width:34,height:34,borderRadius:10,
@@ -361,7 +481,7 @@ export default function App() {
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:16,boxShadow:'0 0 20px rgba(14,165,233,0.4)',
             }}>📈</div>
-            <div>
+            <div className="header-logo">
               <h1 style={{fontSize:16,fontWeight:800,margin:0,lineHeight:1,
                 background:'linear-gradient(90deg,#f1f5f9,#94a3b8)',
                 WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
@@ -373,34 +493,103 @@ export default function App() {
             </div>
           </div>
 
-          {/* TABS */}
-          <nav style={{display:'flex',gap:4}}>
+          {/* Desktop Tabs */}
+          <nav className="desktop-nav" style={{display:'flex',gap:4}}>
             {tabs.map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)}
+              <button key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className="tab-button"
                 style={{
                   background: activeTab===t.id ? 'rgba(14,165,233,0.15)' : 'transparent',
                   border: `1px solid ${activeTab===t.id ? 'rgba(14,165,233,0.4)' : 'transparent'}`,
-                  borderRadius:10,padding:'6px 14px',cursor:'pointer',
+                  borderRadius:10,padding:'8px 14px',cursor:'pointer',
                   fontSize:13,fontWeight:activeTab===t.id?700:500,
                   color: activeTab===t.id ? 'var(--accent)' : 'var(--text-muted)',
                   transition:'all 0.15s',display:'flex',alignItems:'center',gap:6,
                 }}>
-                <span>{t.icon}</span>{t.label}
+                <span>{t.icon}</span><span className="tab-label">{t.label}</span>
               </button>
             ))}
           </nav>
 
+          {/* Live indicator + Mobile menu toggle */}
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',
-              boxShadow:'0 0 8px #10b981',animation:'pulse 2s infinite'}}/>
-            <span style={{fontSize:12,color:'#10b981',fontWeight:600}}>LIVE</span>
+            <div className="live-indicator" style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{width:8,height:8,borderRadius:'50%',background:'#10b981',
+                boxShadow:'0 0 8px #10b981',animation:'pulse 2s infinite'}}/>
+              <span style={{fontSize:12,color:'#10b981',fontWeight:600}}>LIVE</span>
+            </div>
             <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                display:'none',
+                flexDirection:'column',
+                justifyContent:'center',
+                alignItems:'center',
+                gap:4,
+                width:44,height:44,
+                background:'transparent',
+                border:'1px solid var(--border)',
+                borderRadius:10,
+                cursor:'pointer',
+                padding:10,
+              }}
+              className="mobile-menu-btn"
+              aria-label="Toggle menu"
+            >
+              <span style={{
+                width:20,height:2,background:mobileMenuOpen ? 'var(--accent)' : 'var(--text-muted)',
+                transition:'all 0.3s',transform:mobileMenuOpen ? 'rotate(45deg) translate(2px, 2px)' : 'none',
+                borderRadius:2,
+              }}/>
+              <span style={{
+                width:20,height:2,background:mobileMenuOpen ? 'transparent' : 'var(--text-muted)',
+                transition:'all 0.3s',borderRadius:2,opacity:mobileMenuOpen ? 0 : 1,
+              }}/>
+              <span style={{
+                width:20,height:2,background:mobileMenuOpen ? 'var(--accent)' : 'var(--text-muted)',
+                transition:'all 0.3s',transform:mobileMenuOpen ? 'rotate(-45deg) translate(2px, -2px)' : 'none',
+                borderRadius:2,
+              }}/>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <nav className="mobile-nav"
+            style={{
+              position:'absolute',top:64,left:0,right:0,
+              background:'rgba(2,6,23,0.98)',
+              backdropFilter:'blur(20px)',
+              borderBottom:'1px solid var(--border)',
+              padding:'12px 16px',
+              display:'flex',flexDirection:'column',gap:8,
+            }}>
+            {tabs.map(t => (
+              <button key={t.id}
+                onClick={() => { setActiveTab(t.id); setMobileMenuOpen(false) }}
+                style={{
+                  background: activeTab===t.id ? 'rgba(14,165,233,0.15)' : 'transparent',
+                  border: `1px solid ${activeTab===t.id ? 'rgba(14,165,233,0.4)' : 'transparent'}`,
+                  borderRadius:10,padding:'14px 16px',cursor:'pointer',
+                  fontSize:14,fontWeight:activeTab===t.id?700:500,
+                  color: activeTab===t.id ? 'var(--accent)' : 'var(--text-muted)',
+                  transition:'all 0.15s',display:'flex',alignItems:'center',gap:10,
+                  width:'100%',textAlign:'left',
+                }}>
+                <span style={{fontSize:18}}>{t.icon}</span>{t.label}
+              </button>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* ── MAIN ── */}
-      <main style={{maxWidth:1400,margin:'0 auto',padding:'24px'}}>
+      <main className="main-container">
 
         {/* FILTER BAR */}
         <div style={{marginBottom:20}}>
@@ -413,7 +602,7 @@ export default function App() {
           <div style={{display:'flex',flexDirection:'column',gap:20}}>
 
             {/* KPI CARDS */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14}}>
+            <div className="grid-kpi">
               <KpiCard icon="📊" label="Total Vacantes" value={insights.total.toLocaleString()} sub="Vacantes agregadas" accent="#0ea5e9"/>
               <KpiCard icon="🌍" label="Remotas" value={insights.remote.toLocaleString()}
                 sub={`${Math.round(insights.remote/insights.total*100)}% del total`} accent="#10b981"/>
@@ -428,7 +617,7 @@ export default function App() {
             </div>
 
             {/* ROW 1 */}
-            <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:20}}>
+            <div className="grid-charts-2">
               {/* SKILLS */}
               {insights.skills.length > 0 && (
                 <ChartCard icon="🚀" title="Top Skills Demandadas" height={320}>
@@ -459,7 +648,7 @@ export default function App() {
             </div>
 
             {/* ROW 2 */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:20}}>
+            <div className="grid-charts-3">
               {/* CATEGORIES */}
               <ChartCard icon="🏢" title="Categorías de Empleo" height={260}>
                 <BarChart data={insights.categories} margin={{top:0,right:8,left:0,bottom:60}}>
@@ -591,7 +780,12 @@ export default function App() {
             </div>
 
             {insights.geo.length > 0 ? (
-              <div className="glass-card" style={{padding:8,height:560}}>
+              <div className="glass-card map-container-wrapper" style={{padding:8,height:560}}>
+                <style>{`
+                  @media (max-width: 768px) {
+                    .map-container-wrapper { height: 400px !important; }
+                  }
+                `}</style>
                 <MapContainer
                   center={[39, -95]}
                   zoom={4}
@@ -618,10 +812,12 @@ export default function App() {
                           <p style={{color:'#94a3b8',margin:'2px 0',fontSize:12}}>🏢 {job.company}</p>
                           <p style={{color:'#94a3b8',margin:'2px 0',fontSize:12}}>📍 {job.location}</p>
                           {job.salary && <p style={{color:'#10b981',margin:'4px 0',fontSize:12}}>💰 {job.salary}</p>}
-                          <a href={job.url} target="_blank" rel="noopener noreferrer"
-                            style={{color:'#0ea5e9',fontSize:12,marginTop:6,display:'block'}}>
-                            Ver vacante →
-                          </a>
+                          {sanitizeUrl(job.url) && (
+                            <a href={sanitizeUrl(job.url)} target="_blank" rel="noopener noreferrer"
+                              style={{color:'#0ea5e9',fontSize:12,marginTop:6,display:'block'}}>
+                              Ver vacante →
+                            </a>
+                          )}
                         </div>
                       </Popup>
                     </CircleMarker>
